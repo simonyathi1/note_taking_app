@@ -1,8 +1,9 @@
-import 'package:note_taking_app/models/note.dart';
-import 'package:sqflite/sqflite.dart';
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
+import 'package:note_taking_app/models/note.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static DatabaseHelper _databaseHelper;
@@ -77,5 +78,16 @@ class DatabaseHelper {
     Database database = await this.database;
     List<Map<String, dynamic>> notes = await database.rawQuery("SELECT COUNT (*) from $noteTable");
     return Sqflite.firstIntValue(notes);
+  }
+
+  Future<List<Note>> getNoteList() async {
+    var noteMapList = await getNotesMapList();
+    int count = noteMapList.length;
+
+    List<Note> noteList = List<Note>();
+    for (int i = 0; i < count; i++) {
+      noteList.add(Note.fromMapObject(noteMapList[i]));
+    }
+    return noteList;
   }
 }

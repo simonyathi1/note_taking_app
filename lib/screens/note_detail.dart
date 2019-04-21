@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:note_taking_app/models/note.dart';
 import 'package:note_taking_app/utils/database_helper.dart';
-import 'package:sqflite/sqflite.dart';
-import 'dart:async';
 
 class NoteDetail extends StatefulWidget {
-  String appBarTitle;
+  final String appBarTitle;
+  final Note note;
 
-  NoteDetail(this.appBarTitle);
+  NoteDetail(this.note, this.appBarTitle);
 
   @override
   State<StatefulWidget> createState() {
-    return NoteDetailState(appBarTitle);
+    return NoteDetailState(note, appBarTitle);
   }
 }
 
@@ -23,12 +23,19 @@ class NoteDetailState extends State<NoteDetail> {
   BuildContext _buildContext;
   String appBarTitle;
   var _formKey = GlobalKey<FormState>();
+  Note note;
 
-  NoteDetailState(this.appBarTitle);
+  NoteDetailState(this.note, this.appBarTitle);
+
+  DatabaseHelper databaseHelper = DatabaseHelper();
 
   void initState() {
     super.initState();
-    _currentSelectedPriority = _priorities[0];
+    if (note != null) {
+      _currentSelectedPriority = getPriorityAsString(note.priority);
+    } else {
+      _currentSelectedPriority = _priorities[0];
+    }
   }
 
   TextEditingController _titleController = TextEditingController();
@@ -36,7 +43,10 @@ class NoteDetailState extends State<NoteDetail> {
 
   @override
   Widget build(BuildContext context) {
+    _titleController.text = note.title;
+    _descriptionController.text = note.description;
     _buildContext = context;
+
     return WillPopScope(
       child: Scaffold(
         appBar: AppBar(
@@ -47,7 +57,7 @@ class NoteDetailState extends State<NoteDetail> {
                 moveToPreviousScreen();
               }),
         ),
-        body: getDetailsScreen(),
+        body: Form(child: getDetailsScreen()),
       ),
       onWillPop: () {
         moveToPreviousScreen();
@@ -71,21 +81,23 @@ class NoteDetailState extends State<NoteDetail> {
       String label, String hint, TextEditingController controller) {
     return Padding(
       padding: EdgeInsets.all(_minimumPadding),
-      child: TextFormField(
-        //style: appliedTextStyle,
-        controller: controller,
-        validator: (String value) {
-          if (value.isEmpty) {
-            return "Please enter $label value";
-          }
-        },
-        decoration: InputDecoration(
-            labelText: label,
-            //labelStyle: appliedTextStyle,
-            errorStyle: TextStyle(fontSize: 15),
-            hintText: hint,
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
+      child: Form(
+        child: TextFormField(
+          //style: appliedTextStyle,
+          controller: controller,
+          validator: (String value) {
+            if (value.isEmpty) {
+              return "Please enter $label value";
+            }
+          },
+          decoration: InputDecoration(
+              labelText: label,
+              //labelStyle: appliedTextStyle,
+              errorStyle: TextStyle(fontSize: 15),
+              hintText: hint,
+              border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
+        ),
       ),
     );
   }
@@ -101,8 +113,9 @@ class NoteDetailState extends State<NoteDetail> {
       }).toList(),
       onChanged: (String newValueSelected) {
         _onDropDownItemSelected(newValueSelected);
+        updatePriorityAsInteger(newValueSelected);
       },
-      value: _currentSelectedPriority,
+          value: getPriorityAsString(note.priority),
     ));
   }
 
@@ -127,7 +140,9 @@ class NoteDetailState extends State<NoteDetail> {
                 ),
                 onPressed: () {
                   setState(() {
-                    if (_formKey.currentState.validate()) {}
+                    if (_formKey.currentState.validate()) {
+                      _save();
+                    }
                   });
                 }),
           ),
@@ -151,8 +166,92 @@ class NoteDetailState extends State<NoteDetail> {
   }
 
   void moveToPreviousScreen() {
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
-  void _delete() {}
+  void updatePriorityAsInteger(String value) {
+    switch (value) {
+      case "High":
+        note.priority = 1;
+        break;
+      case "Low":
+        note.priority = 2;
+        break;
+    }
+  }
+
+  String getPriorityAsString(int value) {
+    switch (value) {
+      case 1:
+        return _priorities[0]; //high
+        break;
+      case 2:
+        return _priorities[1]; //low
+        break;
+    }
+    return "";
+  }
+
+  void updateTitle() {
+    note.title = this._titleController.text;
+  }
+
+  void updateDescription() {
+    note.description = this._descriptionController.text;
+  }
+
+  void setNoteCreationDate() {
+    note.date = DateFormat.yMMMMd().format(DateTime.now());
+  }
+
+  void _save() async {
+    updateTitle();
+    updateDescription();
+    setNoteCreationDate();
+    int result;
+    moveToPreviousScreen();
+    if (note.id != null) {
+      // update
+      result = await databaseHelper.updateNote(note);
+    } else {
+      //create
+      result = await databaseHelper.insertNote(note);
+    }
+
+    if (result != 0) {
+      // success
+      _showAlertDialog("Status", "Note Saved Successfully");
+    } else {
+      //failure
+      _showAlertDialog("Status", "Problem Saving Note");
+    }
+  }
+
+  void _delete() async {
+    int result;
+    moveToPreviousScreen();
+    if (note.id == null) {
+      // delete new note
+      _showAlertDialog("Status", "No note to delete");
+      return;
+    }
+
+    result = await databaseHelper.deleteNote(note.id);
+
+    if (result != 0) {
+      // success
+      _showAlertDialog("Status", "Note Deleted Successfully");
+    } else {
+      //failure
+      _showAlertDialog("Status", "Problem Deleting Note");
+    }
+  }
+
+  void _showAlertDialog(String title, String message) {
+    AlertDialog alertDialog = AlertDialog(
+      title: Text(title),
+      content: Text(message),
+    );
+    showDialog(context: context, builder: (_) => alertDialog);
+  }
 }

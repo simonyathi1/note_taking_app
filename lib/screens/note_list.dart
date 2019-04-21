@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:note_taking_app/screens/note_detail.dart';
 import 'package:note_taking_app/models/note.dart';
+import 'package:note_taking_app/screens/note_detail.dart';
 import 'package:note_taking_app/utils/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
-import 'dart:async';
 
 class NoteList extends StatefulWidget {
   @override
@@ -29,7 +30,7 @@ class NoteListState extends State<NoteList> {
       body: getNoteListView(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          navigateToDetail("Add Note");
+          navigateToDetail(new Note(2, "", ""), "Add Note");
         },
         tooltip: "Add Note",
         child: Icon(Icons.add),
@@ -38,37 +39,40 @@ class NoteListState extends State<NoteList> {
   }
 
   ListView getNoteListView() {
+    updateListView();
     TextStyle titleStyle = Theme.of(context).textTheme.subhead;
-    return ListView.builder(itemBuilder: (BuildContext context, int position) {
-      if (noteList.isNotEmpty)
-        return Card(
-          color: Colors.white,
-          elevation: 2,
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor:
+    return ListView.builder(
+        itemCount: noteList.length,
+        itemBuilder: (BuildContext context, int position) {
+          if (noteList.isNotEmpty)
+            return Card(
+              color: Colors.white,
+              elevation: 2,
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor:
                   getPriorityColor(this.noteList[position].priority),
-              child: getPriorityIcon(this.noteList[position].priority),
-            ),
-            title: Text(
-              this.noteList[position].title,
-              style: titleStyle,
-            ),
-            subtitle: Text(this.noteList[position].date),
-            trailing: GestureDetector(
-                child: Icon(
-                  Icons.delete,
-                  color: Colors.grey,
+                  child: getPriorityIcon(this.noteList[position].priority),
                 ),
+                title: Text(
+                  this.noteList[position].title,
+                  style: titleStyle,
+                ),
+                subtitle: Text(this.noteList[position].date),
+                trailing: GestureDetector(
+                    child: Icon(
+                      Icons.delete,
+                      color: Colors.grey,
+                    ),
+                    onTap: () {
+                      _delete(context, this.noteList[position]);
+                    }),
                 onTap: () {
-                  _delete(context, this.noteList[position]);
-                }),
-            onTap: () {
-              navigateToDetail("Edit Note");
-            },
-          ),
-        );
-    });
+                  navigateToDetail(noteList[position], "Edit Note");
+                },
+              ),
+            );
+        });
   }
 
   Color getPriorityColor(int priority) {
@@ -107,7 +111,7 @@ class NoteListState extends State<NoteList> {
     int result = await databaseHelper.deleteNote(note.id);
     if (result != 0) {
       _showSnackBar(context, "Note deleted");
-      //todo: notelist refresh
+      updateListView();
     }
   }
 
@@ -118,20 +122,38 @@ class NoteListState extends State<NoteList> {
     Scaffold.of(context).showSnackBar(snackBar);
   }
 
-  void navigateToDetail(String appBarTitle) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return NoteDetail(appBarTitle);
+  void navigateToDetail(Note note, String appBarTitle) async {
+    bool hasAddedOrDeletedNote =
+    await Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return NoteDetail(note, appBarTitle);
     }));
+
+    if (hasAddedOrDeletedNote) {
+      updateListView();
+    }
   }
 
-  Future<List<Note>> getNoteList()async{
+  Future<List<Note>> getNoteList() async {
     var noteMapList = await databaseHelper.getNotesMapList();
     int count = noteMapList.length;
 
     List<Note> noteList = List<Note>();
-    for(int i = 0; i<count; i++){
+    for (int i = 0; i < count; i++) {
       noteList.add(Note.fromMapObject(noteMapList[i]));
     }
     return noteList;
+  }
+
+  void updateListView() {
+    final Future<Database> dbFuture = databaseHelper.initializeDatabase();
+    dbFuture.then((database) {
+      Future<List<Note>> noteListFuture = databaseHelper.getNoteList();
+      noteListFuture.then((noteList) {
+        setState(() {
+          this.noteList = noteList;
+          this.count = noteList.length;
+        });
+      });
+    });
   }
 }

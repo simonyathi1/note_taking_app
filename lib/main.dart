@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:note_taking_app/screens/note_detail.dart';
 import 'package:note_taking_app/screens/note_list.dart';
 
 void main() => runApp(MyApp());
@@ -16,5 +15,4 @@ class MyApp extends StatelessWidget {
       home: NoteList(),
     );
   }
-
 }
