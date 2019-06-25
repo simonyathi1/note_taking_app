@@ -38,13 +38,15 @@ class NoteDetailState extends State<NoteDetail> {
     }
   }
 
-  TextEditingController _titleController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
+  var _titleController = new TextEditingController();
+  var _descriptionController = new TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    _titleController.text = note.title;
-    _descriptionController.text = note.description;
+    if(note != null) {
+      _titleController.text = note.title;
+      _descriptionController.text = note.description;
+    }
     _buildContext = context;
 
     return WillPopScope(
@@ -82,7 +84,7 @@ class NoteDetailState extends State<NoteDetail> {
     return Padding(
       padding: EdgeInsets.all(_minimumPadding),
       child: Form(
-        child: TextFormField(
+        child: new TextFormField(
           //style: appliedTextStyle,
           controller: controller,
           validator: (String value) {
@@ -133,15 +135,16 @@ class NoteDetailState extends State<NoteDetail> {
           Expanded(
             child: RaisedButton(
                 color: Theme.of(_buildContext).accentColor,
-                textColor: Theme.of(_buildContext).primaryColorDark,
+                textColor: Colors.white,
                 child: Text(
                   "Save",
                   textScaleFactor: 1.5,
                 ),
                 onPressed: () {
                   setState(() {
-                    if (_formKey.currentState.validate()) {
+                    if (_titleController.toString() != "" && _descriptionController.toString() != "") {
                       _save();
+                      debugPrint("save");
                     }
                   });
                 }),
@@ -149,7 +152,7 @@ class NoteDetailState extends State<NoteDetail> {
           Expanded(
             child: RaisedButton(
                 color: Theme.of(_buildContext).accentColor,
-                textColor: Theme.of(_buildContext).primaryColorDark,
+                textColor: Colors.white,
                 child: Text(
                   "Delete",
                   textScaleFactor: 1.5,
@@ -157,6 +160,7 @@ class NoteDetailState extends State<NoteDetail> {
                 onPressed: () {
                   setState(() {
                     _delete();
+                    debugPrint("del");
                   });
                 }),
           ),
@@ -205,11 +209,11 @@ class NoteDetailState extends State<NoteDetail> {
   }
 
   void _save() async {
+    moveToPreviousScreen();
     updateTitle();
     updateDescription();
     setNoteCreationDate();
     int result;
-    moveToPreviousScreen();
     if (note.id != null) {
       // update
       result = await databaseHelper.updateNote(note);
