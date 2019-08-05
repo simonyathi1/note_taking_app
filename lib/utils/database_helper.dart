@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:note_taking_app/models/note.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as p;
 
 class DatabaseHelper {
   static DatabaseHelper _databaseHelper;
@@ -34,9 +33,11 @@ class DatabaseHelper {
 
   Future<Database> initializeDatabase() async {
     //Get directory path to the Android and IOS databases
-    Directory directory = await getApplicationDocumentsDirectory();
-    String path = directory.path + "note.db";
+//    Directory directory = await getApplicationDocumentsDirectory();
+//    String path = directory.path + "note.db";
 
+    var databasesPath = await getDatabasesPath();
+    String path = p.join(databasesPath, 'note.db');
     //Open/ create database at given path
     var notesDatabase =
         await openDatabase(path, version: 1, onCreate: _createDB);

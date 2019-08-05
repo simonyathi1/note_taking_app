@@ -1,4 +1,4 @@
-package com.example.note_taking_app
+package com1.example.note_taking_app
 
 import android.os.Bundle
 

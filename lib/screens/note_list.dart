@@ -26,15 +26,10 @@ class NoteListState extends State<NoteList> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Notes"),
+        centerTitle: true,
       ),
       body: getNoteListView(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          navigateToDetail(new Note(2, "", ""), "Add Note");
-        },
-        tooltip: "Add Note",
-        child: Icon(Icons.add),
-      ),
+
     );
   }
 
@@ -44,7 +39,7 @@ class NoteListState extends State<NoteList> {
     return ListView.builder(
         itemCount: noteList.length,
         itemBuilder: (BuildContext context, int position) {
-          if (noteList.isNotEmpty)
+          if (noteList.isNotEmpty) {
             return Card(
               color: Colors.white,
               elevation: 2,
@@ -72,6 +67,7 @@ class NoteListState extends State<NoteList> {
                 },
               ),
             );
+          }else return null;
         });
   }
 

@@ -22,7 +22,6 @@ class NoteDetailState extends State<NoteDetail> {
   TextStyle appliedTextStyle;
   BuildContext _buildContext;
   String appBarTitle;
-  var _formKey = GlobalKey<FormState>();
   Note note;
 
   NoteDetailState(this.note, this.appBarTitle);
@@ -43,7 +42,7 @@ class NoteDetailState extends State<NoteDetail> {
 
   @override
   Widget build(BuildContext context) {
-    if(note != null) {
+    if (note.id != null) {
       _titleController.text = note.title;
       _descriptionController.text = note.description;
     }
@@ -52,6 +51,7 @@ class NoteDetailState extends State<NoteDetail> {
     return WillPopScope(
       child: Scaffold(
         appBar: AppBar(
+          centerTitle: true,
           title: Text(appBarTitle),
           leading: IconButton(
               icon: Icon(Icons.arrow_back),
@@ -91,14 +91,14 @@ class NoteDetailState extends State<NoteDetail> {
             if (value.isEmpty) {
               return "Please enter $label value";
             }
+            else return "";
           },
           decoration: InputDecoration(
               labelText: label,
-              //labelStyle: appliedTextStyle,
               errorStyle: TextStyle(fontSize: 15),
               hintText: hint,
               border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(25.0))),
         ),
       ),
     );
@@ -117,7 +117,7 @@ class NoteDetailState extends State<NoteDetail> {
         _onDropDownItemSelected(newValueSelected);
         updatePriorityAsInteger(newValueSelected);
       },
-          value: getPriorityAsString(note.priority),
+      value: getPriorityAsString(note.priority),
     ));
   }
 
@@ -142,7 +142,8 @@ class NoteDetailState extends State<NoteDetail> {
                 ),
                 onPressed: () {
                   setState(() {
-                    if (_titleController.toString() != "" && _descriptionController.toString() != "") {
+                    if (_titleController.toString() != "" &&
+                        _descriptionController.toString() != "") {
                       _save();
                       debugPrint("save");
                     }
@@ -170,7 +171,9 @@ class NoteDetailState extends State<NoteDetail> {
   }
 
   void moveToPreviousScreen() {
-    Navigator.pop(context, true);
+    if (appBarTitle == "Edit Note") {
+      Navigator.pop(context, true);
+    }
   }
 
   void updatePriorityAsInteger(String value) {
@@ -229,6 +232,8 @@ class NoteDetailState extends State<NoteDetail> {
       //failure
       _showAlertDialog("Status", "Problem Saving Note");
     }
+    _titleController.text = "";
+    _descriptionController.text = "";
   }
 
   void _delete() async {
@@ -249,6 +254,8 @@ class NoteDetailState extends State<NoteDetail> {
       //failure
       _showAlertDialog("Status", "Problem Deleting Note");
     }
+    _titleController.text = "";
+    _descriptionController.text = "";
   }
 
   void _showAlertDialog(String title, String message) {
